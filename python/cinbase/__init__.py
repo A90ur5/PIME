@@ -2476,6 +2476,11 @@ class CinBase:
     # 鍵盤開啟/關閉時會被呼叫 (在 Windows 10 Ctrl+Space 時)
     def onKeyboardStatusChanged(self, cbTS, opened):
         if opened: # 鍵盤開啟
+            # 鍵盤關閉 (IME off) 期間，任何按鍵事件 (包括 Caps Lock) 都會在
+            # TSF 層被直接放行，輸入法收不到，導致 cbTS.capsStates 快取停留在
+            # 舊值。這裡重新讀取 Caps Lock 狀態，避免之後 Shift+字母
+            # (outputSmallLetterWithShift) 依過期的 capsStates 判斷大小寫而輸出錯誤。
+            cbTS.capsStates = True if self.getKeyState(VK_CAPITAL) else False
             self.resetComposition(cbTS)
             self.resetCompositionBuffer(cbTS)
         else: # 鍵盤關閉，輸入法停用
